@@ -9,6 +9,45 @@ package main
 import "github.com/gizak/termui"
 import "github.com/shirou/gopsutil/mem"
 import "github.com/shirou/gopsutil/cpu"
+import "strconv"
+
+func mem_UsedPercent(UsedPercent int) *termui.Gauge {
+	g := termui.NewGauge()
+	g.Percent = UsedPercent
+	g.Width = 50
+	g.Height = 3
+	g.BorderLabel = "Memory UsedPercent"
+	g.BarColor = termui.ColorRed
+	g.BorderFg = termui.ColorWhite
+	g.BorderLabelFg = termui.ColorCyan
+	return g
+}
+
+func cpu_UsedPercent(UsedPercent int) *termui.Gauge {
+	g := termui.NewGauge()
+	g.Percent = UsedPercent
+	g.Width = 50
+	g.Height = 3
+	g.PercentColor = termui.ColorBlue
+	g.X = 51
+	g.BorderLabel = "CPU UsedPercent"
+	g.BarColor = termui.ColorYellow
+	g.BorderFg = termui.ColorWhite
+	return g
+}
+
+func mem_info(v *mem.VirtualMemoryStat) *termui.Par {
+	total := strconv.Itoa(int(v.Total >> 20))
+	free := strconv.Itoa(int(v.Free >> 20))
+	mem_info := "Memtory Total: " + total + "MB\n" + "Memory Free:" + free + "MB\n"
+	g := termui.NewPar(mem_info)
+	g.Height = 5
+	g.Width = 50
+	g.Y = 3
+	g.BorderLabel = "Memory Info"
+	g.BorderFg = termui.ColorYellow
+	return g
+}
 
 func main() {
 	err := termui.Init()
@@ -17,57 +56,14 @@ func main() {
 	}
 	defer termui.Close()
 
-	//termui.UseTheme("helloworld")
-
-	ga_mem := termui.NewGauge()
 	v, _ := mem.VirtualMemory()
-	ga_mem.Percent = int(v.UsedPercent)
-	ga_mem.Width = 50
-	ga_mem.Height = 3
-	ga_mem.BorderLabel = "Memory UsedPercent"
-	ga_mem.BarColor = termui.ColorRed
-	ga_mem.BorderFg = termui.ColorWhite
-	ga_mem.BorderLabelFg = termui.ColorCyan
-
-	ga_cpu := termui.NewGauge()
 	c, _ := cpu.Percent(1000000000, true)
-	ga_cpu.Percent = int(c[0])
-	ga_cpu.Width = 50
-	ga_cpu.Height = 3
-	ga_cpu.PercentColor = termui.ColorBlue
-	ga_cpu.X = 51
-	ga_cpu.BorderLabel = "CPU UsedPercent"
-	ga_cpu.BarColor = termui.ColorYellow
-	ga_cpu.BorderFg = termui.ColorWhite
 
-	gc_mem := termui.NewPar("Simple colored text\nwith label. It [can be](fg-red) multilined with \\n or [break automatically](fg-red,fg-bold)")
-	gc_mem.Height = 5
-	gc_mem.Width = 50
-	gc_mem.Y = 3
-	gc_mem.BorderLabel = "Memory Info"
-	gc_mem.BorderFg = termui.ColorYellow
+	ga_mem := mem_UsedPercent(int(v.UsedPercent))
+	ga_cpu := cpu_UsedPercent(int(c[0]))
+	gc_mem := mem_info(v)
 
-	g3 := termui.NewGauge()
-	g3.Percent = 50
-	g3.Width = 50
-	g3.Height = 3
-	g3.Y = 11
-	g3.BorderLabel = "Gauge with custom label"
-	g3.Label = "{{percent}}% (100MBs free)"
-	g3.LabelAlign = termui.AlignRight
-
-	g4 := termui.NewGauge()
-	g4.Percent = 50
-	g4.Width = 50
-	g4.Height = 3
-	g4.Y = 14
-	g4.BorderLabel = "Gauge"
-	g4.Label = "Gauge with custom highlighted label"
-	g4.PercentColor = termui.ColorYellow
-	g4.BarColor = termui.ColorGreen
-	g4.PercentColorHighlighted = termui.ColorBlack
-
-	termui.Render(ga_mem, gc_mem, ga_cpu, g3, g4)
+	termui.Render(ga_mem, gc_mem, ga_cpu)
 
 	termui.Handle("/sys/kbd/q", func(termui.Event) {
 		termui.StopLoop()
