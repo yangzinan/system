@@ -29,34 +29,23 @@ func main() {
 	ga_mem.BorderFg = termui.ColorWhite
 	ga_mem.BorderLabelFg = termui.ColorCyan
 
-	gg := termui.NewBlock()
-	gg.Width = 50
-	gg.Height = 5
-	gg.Y = 12
-	gg.BorderLabel = "TEST"
-	gg.Align()
-
 	ga_cpu := termui.NewGauge()
 	c, _ := cpu.Percent(1000000000, true)
 	ga_cpu.Percent = int(c[0])
 	ga_cpu.Width = 50
 	ga_cpu.Height = 3
 	ga_cpu.PercentColor = termui.ColorBlue
-	ga_cpu.Y = 3
+	ga_cpu.X = 51
 	ga_cpu.BorderLabel = "CPU UsedPercent"
 	ga_cpu.BarColor = termui.ColorYellow
 	ga_cpu.BorderFg = termui.ColorWhite
 
-	g1 := termui.NewGauge()
-	g1.Percent = 30
-	g1.Width = 50
-	g1.Height = 5
-	g1.Y = 6
-	g1.BorderLabel = "Big Gauge"
-	g1.PercentColor = termui.ColorYellow
-	g1.BarColor = termui.ColorGreen
-	g1.BorderFg = termui.ColorWhite
-	g1.BorderLabelFg = termui.ColorMagenta
+	gc_mem := termui.NewPar("Simple colored text\nwith label. It [can be](fg-red) multilined with \\n or [break automatically](fg-red,fg-bold)")
+	gc_mem.Height = 5
+	gc_mem.Width = 50
+	gc_mem.Y = 3
+	gc_mem.BorderLabel = "Memory Info"
+	gc_mem.BorderFg = termui.ColorYellow
 
 	g3 := termui.NewGauge()
 	g3.Percent = 50
@@ -78,7 +67,7 @@ func main() {
 	g4.BarColor = termui.ColorGreen
 	g4.PercentColorHighlighted = termui.ColorBlack
 
-	termui.Render(ga_mem, g1, ga_cpu, g3, g4)
+	termui.Render(ga_mem, gc_mem, ga_cpu, g3, g4)
 
 	termui.Handle("/sys/kbd/q", func(termui.Event) {
 		termui.StopLoop()
@@ -91,28 +80,16 @@ func main() {
 		if t.Count%2 == 0 {
 			v, _ := mem.VirtualMemory()
 			ga_mem.Percent = int(v.UsedPercent)
+			c, _ := cpu.Percent(1000000000, true)
+			ga_cpu.Percent = int(c[0])
 		} else {
 			v, _ := mem.VirtualMemory()
 			ga_mem.Percent = int(v.UsedPercent)
+			c, _ := cpu.Percent(1000000000, true)
+			ga_cpu.Percent = int(c[0])
 		}
 
-		termui.Render(ga_mem)
-
-	})
-
-	termui.Handle("/timer/1s", func(e termui.Event) {
-		t := e.Data.(termui.EvtTimer)
-		termui.SendCustomEvt("/usr/t", t.Count)
-
-		if t.Count%2 == 0 {
-			v, _ := cpu.Percent(1000000000, true)
-			ga_cpu.Percent = int(v[0])
-		} else {
-			v, _ := cpu.Percent(1000000000, true)
-			ga_cpu.Percent = int(v[0])
-		}
-
-		termui.Render(ga_cpu)
+		termui.Render(ga_mem, ga_cpu)
 
 	})
 
