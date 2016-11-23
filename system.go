@@ -11,9 +11,9 @@ import "github.com/shirou/gopsutil/mem"
 import "github.com/shirou/gopsutil/cpu"
 import "strconv"
 
-func mem_UsedPercent(UsedPercent int) *termui.Gauge {
+func mem_UsedPercent(UsedPercent_mem int) *termui.Gauge {
 	g := termui.NewGauge()
-	g.Percent = UsedPercent
+	g.Percent = UsedPercent_mem
 	g.Width = 50
 	g.Height = 3
 	g.BorderLabel = "Memory UsedPercent"
@@ -23,9 +23,9 @@ func mem_UsedPercent(UsedPercent int) *termui.Gauge {
 	return g
 }
 
-func cpu_UsedPercent(UsedPercent int) *termui.Gauge {
+func cpu_UsedPercent(UsedPercent_cpu int) *termui.Gauge {
 	g := termui.NewGauge()
-	g.Percent = UsedPercent
+	g.Percent = UsedPercent_cpu
 	g.Width = 50
 	g.Height = 3
 	g.PercentColor = termui.ColorBlue
@@ -39,14 +39,24 @@ func cpu_UsedPercent(UsedPercent int) *termui.Gauge {
 func mem_info(v *mem.VirtualMemoryStat) *termui.Par {
 	total := strconv.Itoa(int(v.Total >> 20))
 	free := strconv.Itoa(int(v.Free >> 20))
-	mem_info := "Memtory Total: " + total + "MB\n" + "Memory Free:" + free + "MB\n"
+	buf := strconv.Itoa(int(v.Buffers >> 20))
+	cached := strconv.Itoa(int(v.Cached >> 20))
+	mem_info := "Total:" + total + "MB  " + "Free:" + free + "MB\n" + "Buffers:" + buf + "MB  " + "Cached: " + cached + "MB"
 	g := termui.NewPar(mem_info)
-	g.Height = 5
+	g.Height = 4
 	g.Width = 50
 	g.Y = 3
 	g.BorderLabel = "Memory Info"
 	g.BorderFg = termui.ColorYellow
 	return g
+}
+
+func all(UsedPercent_cpu, UsedPercent_mem float64, v *mem.VirtualMemoryStat) (g1 *termui.Gauge, g2 *termui.Gauge) {
+	ga_mem := mem_UsedPercent(int(UsedPercent_mem))
+	ga_cpu := cpu_UsedPercent(int(UsedPercent_cpu))
+	gc_mem := mem_info(v)
+	termui.Render(ga_mem, gc_mem, ga_cpu)
+	return ga_cpu, ga_mem
 }
 
 func main() {
@@ -59,11 +69,7 @@ func main() {
 	v, _ := mem.VirtualMemory()
 	c, _ := cpu.Percent(1000000000, true)
 
-	ga_mem := mem_UsedPercent(int(v.UsedPercent))
-	ga_cpu := cpu_UsedPercent(int(c[0]))
-	gc_mem := mem_info(v)
-
-	termui.Render(ga_mem, gc_mem, ga_cpu)
+	ga_cpu, ga_mem := all(v.UsedPercent, c[0], v)
 
 	termui.Handle("/sys/kbd/q", func(termui.Event) {
 		termui.StopLoop()
