@@ -1,4 +1,5 @@
 # system
+
 ## proces
 * 使用方法： proces pid
 ```shell
@@ -16,3 +17,5 @@ UserName:root
 CreateTime: 2016-03-29 14:05:17 +0800 CST
 ================
 ```
+## system
+* 使用截图
