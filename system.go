@@ -9,14 +9,11 @@ package main
 import (
 	"strconv"
 
-	"time"
-
 	"github.com/gizak/termui"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/load"
 	"github.com/shirou/gopsutil/mem"
-	"github.com/shirou/gopsutil/net"
 )
 
 func mem_UsedPercent(UsedPercent_mem int) *termui.Gauge {
@@ -90,7 +87,7 @@ func disk_info(disks []disk.PartitionStat, count int) *termui.Par {
 	var disk_info string
 	var total string
 	for i := 0; i < count; i++ {
-		d = disks[i].Device
+		d = disks[i].Mountpoint
 		dd, _ := disk.Usage(d)
 		UsedPercent = strconv.FormatFloat(dd.UsedPercent, 'f', 1, 64)
 		total = strconv.Itoa(int(dd.Total) >> 30)
@@ -101,36 +98,6 @@ func disk_info(disks []disk.PartitionStat, count int) *termui.Par {
 	g.Width = 50
 	g.Y = 7
 	g.BorderLabel = "Disk Info"
-	g.BorderFg = termui.ColorYellow
-	return g
-}
-
-func get_net_info(ns1, ns2 []net.IOCountersStat, n []net.InterfaceStat) (string, int) {
-	a := len(ns1)
-	var net_info string
-	for i := 0; i < a; i++ {
-		r := strconv.Itoa(int((ns2[i].BytesRecv - ns1[i].BytesRecv) >> 10))
-		w := strconv.Itoa(int((ns2[i].BytesSent - ns1[i].BytesSent) >> 10))
-		//net_info = net_info + n[i].Name + "|"
-		if len(n[i].Addrs) >= 2 {
-			net_info = net_info + "Name:" + n[i].Name + "  " + "HAddr:" + n[i].HardwareAddr + "  " + "IPAddr" + n[i].Addrs[1].Addr + "  " + "Recv(KB)/S:" + r + "  " +
-				"Send(KB)/S:" + w + "\n"
-		}
-	}
-	return net_info, a
-}
-
-func net_info(info string, count int, a int) *termui.Par {
-	if count < 11 {
-		count = 11 + 1
-	} else {
-		count = count + 1
-	}
-	g := termui.NewPar(info)
-	g.Height = a
-	g.Width = 100
-	g.Y = count
-	g.BorderLabel = "Net Info"
 	g.BorderFg = termui.ColorYellow
 	return g
 }
@@ -151,14 +118,8 @@ func main() {
 	gc_mem := mem_info(v)
 	gc_cpu := cpu_info()
 	gc_disk := disk_info(disks, count)
-	ns1, _ := net.IOCounters(true)
-	time.Sleep(1000000000)
-	ns2, _ := net.IOCounters(true)
-	n, _ := net.Interfaces()
-	info, a := get_net_info(ns1, ns2, n)
-	gc_net := net_info(info, count+13, a)
 
-	termui.Render(ga_mem, gc_mem, ga_cpu, gc_cpu, gc_disk, gc_net)
+	termui.Render(ga_mem, gc_mem, ga_cpu, gc_cpu, gc_disk)
 
 	termui.Handle("/sys/kbd/q", func(termui.Event) {
 		termui.StopLoop()
