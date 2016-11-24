@@ -19,3 +19,5 @@ CreateTime: 2016-03-29 14:05:17 +0800 CST
 ```
 ## system
 * 使用截图
+
+![image](https://github.com/yangzinan/system/blob/master/image/system.png?raw=true)
