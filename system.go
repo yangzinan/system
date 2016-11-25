@@ -1,9 +1,3 @@
-// Copyright 2016 Zack Guo <zack.y.guo@gmail.com>. All rights reserved.
-// Use of this source code is governed by a MIT license that can
-// be found in the LICENSE file.
-
-// +build ignore
-
 package main
 
 import (
@@ -94,7 +88,7 @@ func disk_info(disks []disk.PartitionStat, count int) *termui.Par {
 		disk_info = disk_info + d + " - " + "Total:" + total + "G" + "  UsedPercent:" + UsedPercent + "%\n"
 	}
 	g := termui.NewPar(disk_info)
-	g.Height = count * 3
+	g.Height = count * 2
 	g.Width = 50
 	g.Y = 7
 	g.BorderLabel = "Disk Info"
