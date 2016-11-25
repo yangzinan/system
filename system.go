@@ -2,6 +2,7 @@ package main
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/gizak/termui"
 	"github.com/shirou/gopsutil/cpu"
@@ -57,7 +58,6 @@ func cpu_info() *termui.Par {
 	load5 := strconv.Itoa(int(v.Load5))
 	load15 := strconv.Itoa(int(v.Load15))
 	c, _ := cpu.Times(false)
-	//{"cpu":"","user":45740.2,"system":20639.8,"idle":591461.7,"nice":0.0,"iowait":0.0,"irq":0.0,"softirq":0.0,"steal":0.0,"guest":0.0,"guestNice":0.0,"stolen":0.0}
 	cpu_info := "Load1:" + load1 + "  load5:" + load5 + "  load15:" + load15 + "\n" +
 		"cpu:" + c[0].CPU + " user:" + strconv.FormatFloat(c[0].User, 'f', 1, 64) + " system:" + strconv.FormatFloat(c[0].System, 'f', 1, 64) +
 		"\nidle:" + strconv.FormatFloat(c[0].Idle, 'f', 1, 64) + " nice:" + strconv.FormatFloat(c[0].Nice, 'f', 1, 64) +
@@ -113,15 +113,21 @@ func get_net_info(n []net.InterfaceStat) (string, int) {
 		//r := strconv.Itoa(int((ns2[num].BytesRecv - ns1[num].BytesRecv) >> 10))
 		//s := strconv.Itoa(int((ns2[num].BytesSent - ns1[num].BytesSent) >> 10))
 		if len(n[i].Addrs) == 2 {
-			if i == num-1 {
+			if i == 0 {
 				info = info + "Name:" + n[i].Name + "  IPAddr:" + n[i].Addrs[0].Addr + "  HAddr:" + n[i].HardwareAddr
 			} else {
-				info = info + "Name:" + n[i].Name + "  IPAddr:" + n[i].Addrs[0].Addr + "  HAddr:" + n[i].HardwareAddr + "\n"
+				info = info + "\nName:" + n[i].Name + "  IPAddr:" + n[i].Addrs[0].Addr + "  HAddr:" + n[i].HardwareAddr
 			}
-			a = a + 1
+		} else {
+			if i == 0 {
+				info = info + "Name:" + n[i].Name + "  IPAddr:" + "" + "  HAddr:" + ""
+			} else {
+				info = info + "\nName:" + n[i].Name + "  IPAddr:" + "" + "  HAddr:"
+			}
 		}
+		a = a + 1
 	}
-	a = a * 2
+	a = a*2 - 1
 	return info, a
 }
 func net_info(info string, count, y int) *termui.Par {
@@ -134,7 +140,7 @@ func net_info(info string, count, y int) *termui.Par {
 	return g
 }
 
-func get_rs(ns1, ns2 []net.IOCountersStat) (r, s string) {
+func get_rs(ns1, ns2 []net.IOCountersStat) (r, s string, ri, si int) {
 	var rai1 int
 	var sai1 int
 	count := len(ns1)
@@ -152,10 +158,32 @@ func get_rs(ns1, ns2 []net.IOCountersStat) (r, s string) {
 	for i := 0; i < count; i++ {
 		sai2 = sai2 + int(ns2[i].BytesSent)>>10
 	}
-	r = strconv.Itoa(rai2 - rai1)
-	s = strconv.Itoa(sai2 - sai2)
-	return r, s
+	ri = rai2 - rai1
+	si = sai2 - sai2
+	r = strconv.Itoa(ri)
+	s = strconv.Itoa(si)
+	return r, s, ri, si
 }
+
+// func get_net_rs(r, s string, ri, si int) *termui.NewSparklines {
+// 	data_r := []int{ri}
+// 	gr := termui.NewSparkline()
+// 	gr.Data = data_r
+// 	gr.Title = "Recv=" + r + "KB/S"
+// 	gr.LineColor = termui.ColorGreen
+
+// 	data_s := []int{si}
+// 	gs := termui.NewSparkline()
+// 	gs.Data = data_r
+// 	gs.Title = "Send=" + r + "KB/S"
+// 	gs.LineColor = termui.ColorGreen
+
+// 	g := termui.NewSparklines(gr, gs)
+// 	g.Height = 6
+// 	g.Width = 100
+// 	g.Border = false
+// 	return g
+// }
 
 func main() {
 	err := termui.Init()
@@ -183,10 +211,30 @@ func main() {
 		gc_net = net_info(info, a, 12)
 	}
 
-	// ns1, _ := net.IOCounters(true)
-	// time.Sleep(1000000000)
-	// ns2, _ := net.IOCounters(true)
-	// r, s := get_rs(ns1, ns2)
+	ns1, _ := net.IOCounters(true)
+	time.Sleep(1000000000)
+	ns2, _ := net.IOCounters(true)
+	r, s, _, _ := get_rs(ns1, ns2)
+	gc_net.BorderLabel = "Net Info" + "  Recv=" + r + "KB/S" + "  Send=" + s + "KB/S"
+	// r, s, ri, si := get_rs(ns1, ns2)
+	// data_r := []int{ri / 10}
+	// gr := termui.NewSparkline()
+	// gr.Data = data_r
+	// gr.Title = "Recv=" + r + "KB/S"
+	// gr.LineColor = termui.ColorGreen
+
+	// data_s := []int{si}
+	// gs := termui.NewSparkline()
+	// gs.Data = data_s
+	// gs.Title = "Send=" + s + "KB/S"
+	// gs.LineColor = termui.ColorGreen
+
+	// g := termui.NewSparklines(gr, gs)
+	// g.Height = 6
+	// g.Width = 100
+	// g.Y = gc_net.Height + a - 10
+	// g.BorderLabel = "Group Sparklines"
+	// g.Border = true
 
 	termui.Render(ga_mem, gc_mem, ga_cpu, gc_cpu, gc_disk, gc_net)
 
@@ -197,7 +245,6 @@ func main() {
 	termui.Handle("/timer/1s", func(e termui.Event) {
 		t := e.Data.(termui.EvtTimer)
 		termui.SendCustomEvt("/usr/t", t.Count)
-		//var ns1 []net.IOCountersStat
 		if t.Count%2 == 0 {
 			m, _ := mem.VirtualMemory()
 			ga_mem.Percent = int(m.UsedPercent)
@@ -216,6 +263,7 @@ func main() {
 				"\nguest:" + strconv.FormatFloat(c[0].Guest, 'f', 1, 64) + " guestNice:" + strconv.FormatFloat(c[0].GuestNice, 'f', 1, 64) +
 				" stolen:" + strconv.FormatFloat(c[0].Stolen, 'f', 1, 64)
 			gc_cpu.Text = cpu_info
+			ns1, _ = net.IOCounters(true)
 		} else {
 			m, _ := mem.VirtualMemory()
 			ga_mem.Percent = int(m.UsedPercent)
@@ -234,10 +282,16 @@ func main() {
 				"\nguest:" + strconv.FormatFloat(c[0].Guest, 'f', 1, 64) + " guestNice:" + strconv.FormatFloat(c[0].GuestNice, 'f', 1, 64) +
 				" stolen:" + strconv.FormatFloat(c[0].Stolen, 'f', 1, 64)
 			gc_cpu.Text = cpu_info
+			ns2, _ = net.IOCounters(true)
+			r, s, _, _ := get_rs(ns1, ns2)
+			//gr.Title = "Recv=" + r + "KB/S"
+			//gs.Title = "Send=" + s + "KB/S"
+			//data_r = append(data_r, ri/10)
+			//data_s = append(data_s, si/10)
+			gc_net.BorderLabel = "Net Info" + "  Recv=" + r + "KB/S" + "  Send=" + s + "KB/S"
 		}
 
-		termui.Render(ga_mem, ga_cpu, gc_cpu)
+		termui.Render(ga_mem, ga_cpu, gc_cpu, gc_net)
 	})
-
 	termui.Loop()
 }
