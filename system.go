@@ -127,7 +127,11 @@ func get_net_info(n []net.InterfaceStat) (string, int) {
 		}
 		a = a + 1
 	}
-	a = a*2 - 1
+	if a <= 2 {
+		a = a * 2
+	} else {
+		a = a*2 - 1
+	}
 	return info, a
 }
 func net_info(info string, count, y int) *termui.Par {
