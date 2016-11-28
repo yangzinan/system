@@ -288,11 +288,13 @@ func main() {
 			gc_cpu.Text = cpu_info
 			ns2, _ = net.IOCounters(true)
 			r, s, _, _ := get_rs(ns1, ns2)
+
 			//gr.Title = "Recv=" + r + "KB/S"
 			//gs.Title = "Send=" + s + "KB/S"
 			//data_r = append(data_r, ri/10)
 			//data_s = append(data_s, si/10)
 			gc_net.BorderLabel = "Net Info" + "  Recv=" + r + "KB/S" + "  Send=" + s + "KB/S"
+
 		}
 
 		termui.Render(ga_mem, ga_cpu, gc_cpu, gc_net)
